@@ -1,4 +1,6 @@
 ### 文件目录格式
+
+```
 +-- cache # 缓存位置
 │   \-- specs.npy # 用于加快特征工程
 +-- Data # 数据集位置
@@ -18,7 +20,9 @@
 +-- download_data.py # 云端环境下载数据
 +-- main.py # 主函数
 +-- readme.md # 项目说明
++-- requirements.txt # 需求
 \-- tmp.py # 测试文件
+```
 
 ### 关于数据
 + `train.csv` 文件主要起到索引作用
