@@ -1,17 +1,24 @@
 ### 文件目录格式
-
-EEG-Beginner/          # 项目根目录
-├── config.py               # 配置文件（路径、参数）
-├── main.py                 # 入口文件（运行整个项目）
-├── src/                    # 源代码文件夹
-│   ├── __init__.py         # 让 Python 识别这是模块
-│   ├── data_loader.py      # 数据加载
-│   ├── preprocess.py       # 数据预处理
-|   ├── generate_npy.py     # 用于生成 npy 文件, 只运行一次
-│   └── feature_engineering.py  # 特征工程
-├── Data/                   # 原始数据
-├── outputs/                # 输出结果（模型、特征、pkl）
-└── README.md               # 项目说明
++-- cache # 缓存位置
+│   \-- specs.npy # 用于加快特征工程
++-- Data # 数据集位置
+│   \-- hms-harmful-brain-activity-classification
++-- outputs # 输出位置
+│   \-- train_with_features.pkl
++-- src # 源代码
+│   +-- __pycache__
+│   +-- __init__.py
+│   +-- data_loader.py # 数据加载
+│   +-- feature_engineering.py # 特征工程
+│   +-- generate_npy.py # 生成 `npy` 文件
+│   +-- preprocess.py # 数据预处理
+│   \-- train_xgboost.py # 训练 XGBoost 模型
++-- .gitignore
++-- config.py # 环境变量
++-- download_data.py # 云端环境下载数据
++-- main.py # 主函数
++-- readme.md # 项目说明
+\-- tmp.py # 测试文件
 
 ### 关于数据
 + `train.csv` 文件主要起到索引作用
