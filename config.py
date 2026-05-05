@@ -1,14 +1,19 @@
 import os
+import kagglehub
 
 # ============ 运行环境控制 ============
 # 通过环境变量 IS_CLOUD=true 切换到云模式
 IS_CLOUD = os.environ.get("IS_CLOUD", "false").lower() == "true"
 
 # ============ 数据源配置 ============
-# 云模式下的数据集下载地址（你需要换成自己的URL）
-CLOUD_DATASET_URL = os.environ.get(
-    "DATASET_URL", "https://your-bucket.oss-cn-hangzhou.aliyuncs.com/hms-dataset.zip"
-)
+# 云模式下的数据集下载（使用kagglehub）
+if IS_CLOUD:
+    # 使用kagglehub下载竞赛数据
+    CLOUD_DATASET_PATH = kagglehub.competition_download(
+        "hms-harmful-brain-activity-classification"
+    )
+else:
+    CLOUD_DATASET_PATH = None
 
 # 本地模式的数据路径
 LOCAL_DATA_PATH = os.path.join(
