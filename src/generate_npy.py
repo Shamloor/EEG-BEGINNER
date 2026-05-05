@@ -2,7 +2,7 @@
 import pandas as pd
 import numpy as np
 import os
-from config import SPEC_PATH, CACHE_SPECS_NPY, CACHE_DIR, IS_CLOUD
+from config import SPEC_PATH, CACHE_SPECS_NPY, IS_CLOUD
 
 
 def generate_spectrograms_npy():

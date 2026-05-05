@@ -29,6 +29,7 @@ CLOUD_DATA_PATH = os.environ.get("CLOUD_DATA_PATH", "/home/ubuntu/data/hms-datas
 if IS_CLOUD:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DATA_PATH = CLOUD_DATA_PATH
+    SPEC_PATH = os.path.join(CLOUD_DATASET_PATH, "train_spectrograms")
 
     # 定义目录
     CACHE_DIR = os.path.join(CLOUD_DATA_PATH, "cache")
