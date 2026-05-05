@@ -1,4 +1,3 @@
-from download_data import ensure_data, create_output_dirs
 from src.data_loader import load_train_csv
 from src.preprocess import create_non_overlap_data
 from src.generate_npy import generate_spectrograms_npy
@@ -27,9 +26,6 @@ def run_pipeline():
     # 环境初始化
     # ============================================================
     print_section("环境初始化", 1, total_steps)
-
-    ensure_data()
-    create_output_dirs()
 
     env_msg = "CLOUD" if IS_CLOUD else "LOCAL"
     print(f"运行环境: {env_msg}")

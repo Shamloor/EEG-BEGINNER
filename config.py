@@ -54,6 +54,9 @@ else:
     XGB_MODEL_PATH = os.path.join(OUTPUT_DIR, "xgboost_model.kpl")
     XGB_PRED_PATH = os.path.join(OUTPUT_DIR, "xgboost_predictions.csv")
 
+# 确保输出目录存在
+os.makedirs(CACHE_DIR, exist_ok=True)
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # ============ 以下配置保持不变 ============
 TARGETS = [
