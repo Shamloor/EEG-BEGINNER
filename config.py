@@ -8,12 +8,12 @@ IS_CLOUD = os.environ.get("IS_CLOUD", "false").lower() == "true"
 # ============ 数据源配置 ============
 # 云模式下的数据集下载（使用kagglehub）
 if IS_CLOUD:
-    # 使用kagglehub下载竞赛数据
-    CLOUD_DATASET_PATH = kagglehub.competition_download(
+    # 当存在已下载的文件时不会重复下载
+    CLOUD_DATA_PATH = kagglehub.competition_download(
         "hms-harmful-brain-activity-classification"
     )
 else:
-    CLOUD_DATASET_PATH = None
+    CLOUD_DATA_PATH = None
 
 # 本地模式的数据路径
 LOCAL_DATA_PATH = os.path.join(
@@ -22,18 +22,15 @@ LOCAL_DATA_PATH = os.path.join(
     "hms-harmful-brain-activity-classification",
 )
 
-# 云模式的数据路径（临时/持久化目录）
-CLOUD_DATA_PATH = os.environ.get("CLOUD_DATA_PATH", "/home/ubuntu/data/hms-dataset")
-
 # 统一数据路径（代码中统一使用这个变量）
 if IS_CLOUD:
     BASE_DIR = os.path.dirname(os.path.abspath(__file__))
     DATA_PATH = CLOUD_DATA_PATH
-    SPEC_PATH = os.path.join(CLOUD_DATASET_PATH, "train_spectrograms")
+    SPEC_PATH = os.path.join(DATA_PATH, "train_spectrograms")
 
     # 定义目录
-    CACHE_DIR = os.path.join(CLOUD_DATA_PATH, "cache")
-    OUTPUT_DIR = os.path.join(CLOUD_DATA_PATH, "outputs")
+    CACHE_DIR = os.path.join(BASE_DIR, "cache")
+    OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 
     # 路径配置
     CACHE_SPECS_NPY = os.path.join(CACHE_DIR, "specs.npy")
