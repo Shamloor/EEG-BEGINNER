@@ -5,18 +5,25 @@ import warnings
 
 warnings.filterwarnings("ignore")
 
-from config import SPEC_PATH, USE_NPY_CACHE, OUTPUT_PKL_PATH
+from config import SPEC_PATH, USE_NPY_CACHE, OUTPUT_PKL_PATH, IS_CLOUD
 
 
 def check_and_handle_existing_pkl():
     """检查 pkl 文件是否存在，如果存在则询问用户是否覆盖"""
     if os.path.exists(OUTPUT_PKL_PATH):
         print(f"\n⚠️ 特征文件已存在: {OUTPUT_PKL_PATH}")
-        response = input("是否覆盖重新生成？(y/N): ")
-        if response.lower() != "y":
-            print("跳过特征工程，使用已有特征文件")
+
+        if IS_CLOUD:
+            # 云环境：文件已存在，直接跳过
+            print("云环境检测到特征文件已存在，跳过生成")
             return False
-        print("覆盖已有文件，重新生成特征...")
+        else:
+            # 本地环境：询问用户
+            response = input("是否覆盖重新生成？(y/N): ")
+            if response.lower() != "y":
+                print("跳过特征工程，使用已有特征文件")
+                return False
+            print("覆盖已有文件，重新生成特征...")
     return True
 
 

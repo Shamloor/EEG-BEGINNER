@@ -48,11 +48,17 @@ def generate_spectrograms_npy(use_multithreading=True, max_workers=None):
 
     # 1. 检查缓存文件是否已存在
     if os.path.exists(CACHE_SPECS_NPY):
-        response = input(f"缓存文件已存在: {CACHE_SPECS_NPY}\n是否覆盖？(y/N): ")
-        if response.lower() != "y":
-            print("跳过生成，使用已有缓存文件")
+        if IS_CLOUD:
+            # 云环境：文件已存在，直接跳过
+            print(f"云环境检测到缓存文件已存在，跳过生成: {CACHE_SPECS_NPY}")
             return
-        print("覆盖已有缓存文件...")
+        else:
+            # 本地环境：询问用户
+            response = input(f"缓存文件已存在: {CACHE_SPECS_NPY}\n是否覆盖？(y/N): ")
+            if response.lower() != "y":
+                print("跳过生成，使用已有缓存文件")
+                return
+            print("覆盖已有缓存文件...")
 
     # 2. 检查原始数据路径是否存在
     if not os.path.exists(SPEC_PATH):
