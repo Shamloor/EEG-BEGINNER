@@ -94,8 +94,8 @@ def extract_features(train_non_overlap, spectrograms):
         row = train_non_overlap.iloc[k]
         r = int((row.min_time + row.max_time) // 4)
 
-        # 直接从 HDF5 文件中获取 dataset
-        spec = spectrograms.get(str(row.spec_id))
+        # 直接从 HDF5 文件中获取 dataset , 注意类型转换
+        spec = spectrograms.get(str(int(row.spec_id)))
         if spec is None:
             continue
 
