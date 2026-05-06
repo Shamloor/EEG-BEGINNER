@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 import os
+import h5py
 import warnings
 
 warnings.filterwarnings("ignore")
@@ -43,18 +44,24 @@ def load_spectrograms():
         print(f"   加载完成。共加载 {len(spectrograms)} 个频谱图。")
 
     else:
-        # 方式B：加载预存的.npy文件（快，但需要提前准备好）
-        from config import CACHE_SPECS_NPY
+        # 方式B：加载预存的.h5文件（内存友好，按需读取）
+        from config import CACHE_SPECS_H5
 
         try:
-            spectrograms_path = CACHE_SPECS_NPY
-            spectrograms = np.load(spectrograms_path, allow_pickle=True).item()
-            print(f"   从 {spectrograms_path} 成功加载预存的频谱图数据。")
-            print(f"   共加载 {len(spectrograms)} 个频谱图。")
+            spectrograms_path = CACHE_SPECS_H5
+            # 只打开文件句柄，不加载数据到内存
+            spectrograms = h5py.File(spectrograms_path, "r")
+            print(
+                f"   从 {spectrograms_path} 成功打开 HDF5 频谱图文件（数据按需读取）。"
+            )
+            print(f"   包含 {len(spectrograms)} 个频谱图。")
         except FileNotFoundError:
-            print("错误: 未找到预存的 specs.npy 文件。")
+            print("错误: 未找到预存的 specs.h5 文件。")
             print("解决方案: 1) 将 READ_SPEC_FILES 设为 True 重新运行。")
-            print("         2) 或确保 specs.npy 文件存在于指定路径。")
+            print("         2) 或确保 specs.h5 文件存在于指定路径。")
+            spectrograms = None
+        except Exception as e:
+            print(f"错误: 打开 HDF5 文件失败: {e}")
             spectrograms = None
 
     return spectrograms
@@ -66,7 +73,7 @@ def extract_features(train_non_overlap, spectrograms):
 
     Args:
         train_non_overlap: 频谱图的索引数据, 包括spec_id, min_time, max_time, patient_id
-        spectrograms: 频谱图列表
+        spectrograms: 频谱图列表（NPY模式下是dict，HDF5模式下是h5py.File对象）
     """
     sample_spec = pd.read_parquet(os.path.join(SPEC_PATH, "1000086677.parquet"))
     SPEC_COLS = sample_spec.columns[1:]
@@ -86,17 +93,19 @@ def extract_features(train_non_overlap, spectrograms):
 
         row = train_non_overlap.iloc[k]
         r = int((row.min_time + row.max_time) // 4)
-        spec = spectrograms.get(row.spec_id)
 
+        # 直接从 HDF5 文件中获取 dataset
+        spec = spectrograms.get(str(row.spec_id))
         if spec is None:
             continue
 
+        # 注意：HDF5 dataset 也支持 len() 和切片操作
         # 10 分钟窗口
         start = r
         end = r + 300
         end = min(end, len(spec))
         start = max(0, end - 300)
-        win = spec[start:end]
+        win = spec[start:end]  # HDF5 模式下此处会从磁盘读取数据
 
         feature_data[k, :n_freqs] = np.nanmean(win, axis=0)
         feature_data[k, n_freqs : 2 * n_freqs] = np.nanmin(win, axis=0)
@@ -106,7 +115,7 @@ def extract_features(train_non_overlap, spectrograms):
         end = r + 155
         end = min(end, len(spec))
         start = max(0, end - 10)
-        win = spec[start:end]
+        win = spec[start:end]  # HDF5 模式下此处会从磁盘读取数据
 
         feature_data[k, 2 * n_freqs : 3 * n_freqs] = np.nanmean(win, axis=0)
         feature_data[k, 3 * n_freqs : 4 * n_freqs] = np.nanmin(win, axis=0)
@@ -144,6 +153,11 @@ def run_feature_engineering(train_non_overlap):
     # 3. 提取特征
     print("\n--- 提取特征 ---")
     final_df = extract_features(train_non_overlap, spectrograms)
+
+    # 如果是 HDF5 模式，关闭文件句柄
+    if USE_NPY_CACHE and hasattr(spectrograms, "close"):
+        spectrograms.close()
+        print("已关闭 HDF5 文件句柄")
 
     # 4. 保存特征
     print("\n--- 保存特征 ---")
