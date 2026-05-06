@@ -3,11 +3,12 @@ import joblib
 import numpy as np
 import pandas as pd
 import xgboost as xgb
-from sklearn.model_selection import GroupKFold, cross_val_score, StratifiedKFold
-from sklearn.metrics import roc_auc_score, log_loss
+from sklearn.model_selection import GroupKFold
+from sklearn.metrics import log_loss
 from sklearn.preprocessing import LabelEncoder
 import warnings
-from config import OUTPUT_PKL_PATH, XGB_MODEL_PATH, XGB_PRED_PATH
+import gc
+from config import OUTPUT_PKL_PATH, XGB_MODEL_PATH
 
 warnings.filterwarnings("ignore")
 
@@ -33,6 +34,7 @@ def prepare_data(df, labels_df):
         y: 标签数组
         groups: 分组信息（patient_id）
         feature_cols: 特征列名列表
+        le: 标签编码器
     """
     # 识别特征列 - 排除非特征列
     exclude_cols = ["spec_id", "min_time", "max_time", "patient_id"]
@@ -61,27 +63,27 @@ def prepare_data(df, labels_df):
     # 获取标签（expert_consensus）
     y = merged_df["expert_consensus"].values
 
-    # 编码多分类标签（expert_consensus 是字符串类型）
-    le = LabelEncoder()
-    y_encoded = le.fit_transform(y)
-
-    print(f"标签分布:")
-
-    # 遍历所有类别
-    for i, label in enumerate(le.classes_):
-        count = (y_encoded == i).sum()
-        print(f"  {label}: {count} ({count/len(y_encoded)*100:.1f}%)")
-
     # 提取分组信息（用于 GroupKFold，防止病人级别的数据泄露）
     groups = (
         merged_df["patient_id"].values if "patient_id" in merged_df.columns else None
     )
 
+    # 编码多分类标签（expert_consensus 是字符串类型）
+    le = LabelEncoder()
+    y_encoded = le.fit_transform(y)
+
+    print(f"标签分布:")
+    for i, label in enumerate(le.classes_):
+        count = (y_encoded == i).sum()
+        print(f"  {label}: {count} ({count/len(y_encoded)*100:.1f}%)")
+
     if groups is not None:
         print(f"共有 {len(np.unique(groups))} 个不同的 patient_id")
 
-    # 返回编码后的标签和分组信息
-    # 注意：保存标签编码器，以便后续预测时可以进行逆转换
+    # 删除不再需要的 merged_df，释放内存
+    del merged_df
+    gc.collect()
+
     return X, y_encoded, groups, feature_cols, le
 
 
@@ -99,8 +101,7 @@ def train_xgboost_with_group_cv(X, y, groups, feature_cols):
         model: 在全量数据上训练好的模型
         cv_results: 交叉验证的详细结果
     """
-    from sklearn.model_selection import GroupKFold, cross_val_predict
-    from sklearn.metrics import classification_report, confusion_matrix
+    from sklearn.metrics import classification_report
     import xgboost as xgb
 
     n_classes = len(np.unique(y))
@@ -154,8 +155,12 @@ def train_xgboost_with_group_cv(X, y, groups, feature_cols):
     all_oof_predictions = (
         np.zeros((len(y), n_classes)) if n_classes > 2 else np.zeros(len(y))
     )
-    # 防止后续因为 y 值变化(地址的值变化)造成 all_true_labels 的变化
-    all_true_labels = y.copy()
+
+    # 直接使用 y，不需要 copy（y 不会被修改）
+    all_true_labels = y
+
+    # 将 np.unique(y) 移到循环外，避免重复计算
+    all_classes = np.unique(y)
 
     # 手动进行交叉验证循环，以便观察每折结果
     for train_idx, val_idx in group_kfold.split(X, y, groups):
@@ -172,15 +177,16 @@ def train_xgboost_with_group_cv(X, y, groups, feature_cols):
         # 存储袋外预测 (OOF)
         all_oof_predictions[val_idx] = y_val_pred_proba
 
-        # 获取所有类别（全局）
-        all_classes = np.unique(y)  # 在循环外部获取一次, 避免类别数目不同报错
-
         # 计算对数损失 (多分类常用)
         loss = log_loss(y_val, y_val_pred_proba, labels=all_classes)
         cv_scores.append(loss)
 
         print(f"  Fold {fold}/{n_splits} - Log Loss: {loss:.4f}")
         fold += 1
+
+        # 释放当前折的模型，避免 GPU 显存累积
+        del model
+        gc.collect()
 
     # 输出整体交叉验证性能
     mean_cv_score = np.mean(cv_scores)
