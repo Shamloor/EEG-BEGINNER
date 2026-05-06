@@ -33,7 +33,7 @@ if IS_CLOUD:
     OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 
     # 路径配置
-    CACHE_SPECS_NPY = os.path.join(CACHE_DIR, "specs.npy")
+    CACHE_SPECS_H5 = os.path.join(CACHE_DIR, "specs.h5")
     OUTPUT_PKL_PATH = os.path.join(OUTPUT_DIR, "train_with_features.pkl")
     XGB_MODEL_PATH = os.path.join(OUTPUT_DIR, "xgboost_model.kpl")
     XGB_PRED_PATH = os.path.join(OUTPUT_DIR, "xgboost_predictions.csv")
@@ -47,7 +47,7 @@ else:
     CACHE_DIR = os.path.join(BASE_DIR, "cache")
     OUTPUT_DIR = os.path.join(BASE_DIR, "outputs")
 
-    CACHE_SPECS_NPY = os.path.join(CACHE_DIR, "specs.npy")
+    CACHE_SPECS_H5 = os.path.join(CACHE_DIR, "specs.h5")
     OUTPUT_PKL_PATH = os.path.join(OUTPUT_DIR, "train_with_features.pkl")
     XGB_MODEL_PATH = os.path.join(OUTPUT_DIR, "xgboost_model.kpl")
     XGB_PRED_PATH = os.path.join(OUTPUT_DIR, "xgboost_predictions.csv")

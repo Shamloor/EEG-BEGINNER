@@ -1,6 +1,6 @@
 from src.data_loader import load_train_csv
 from src.preprocess import create_non_overlap_data
-from src.generate_npy import generate_spectrograms_npy
+from src.generate_h5 import generate_spectrograms_h5
 from src.feature_engineering import run_feature_engineering
 from src.train_xgboost import load_features, prepare_data, train_xgboost_with_group_cv
 from config import FEATURE_ENGINEER, MODEL, IS_CLOUD
@@ -44,7 +44,7 @@ def run_pipeline():
     train_non_overlap = create_non_overlap_data(train_df)
     print(f"非重叠数据形状: {train_non_overlap.shape}")
 
-    generate_spectrograms_npy()
+    generate_spectrograms_h5()
 
     # ============================================================
     # 步骤 3 & 4: 特征工程（可选）
