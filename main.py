@@ -5,6 +5,7 @@ from src.feature_engineering import run_feature_engineering
 from src.train_xgboost import load_features, prepare_data, train_xgboost_with_group_cv
 from config import FEATURE_ENGINEER, MODEL, IS_CLOUD
 import tracemalloc
+import gc
 
 
 def print_section(title, step_num, total_steps=None):
@@ -69,11 +70,16 @@ def run_pipeline():
     # 步骤 3 & 4: 特征工程（可选）
     # ============================================================
     if FEATURE_ENGINEER:
-        if FEATURE_ENGINEER:
-            print_section("特征工程", 4, total_steps)
-            final_df = run_feature_engineering(train_non_overlap)
-            if final_df is None:
-                print("⚠️ 特征工程已跳过，使用已有特征文件")
+        print_section("特征工程", 4, total_steps)
+        final_df = run_feature_engineering(train_non_overlap)
+        if final_df is None:
+            print("⚠️ 特征工程已跳过，使用已有特征文件")
+        else:
+            del final_df
+            gc.collect()
+            
+    del train_non_overlap
+    gc.collect()
 
     # ============================================================
     # 步骤 5: 模型训练
@@ -82,6 +88,8 @@ def run_pipeline():
         print_section("XGBoost 模型训练", 5, total_steps)
         df = load_features()
         X, y_encoded, groups, feature_cols, le = prepare_data(df, train_df)
+        del df, train_df
+        gc.collect()
         model, cv_results = train_xgboost_with_group_cv(
             X, y_encoded, groups, feature_cols
         )
