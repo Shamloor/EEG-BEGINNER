@@ -69,4 +69,4 @@ TARGETS = [
 USE_NPY_CACHE = True
 FEATURE_ENGINEER = True
 MODEL = "XGBoost"
-IS_TEST = True
+TEST_MODE = True

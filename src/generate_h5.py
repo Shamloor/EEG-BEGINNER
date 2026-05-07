@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import h5py
 import os
-from config import SPEC_PATH, CACHE_SPECS_H5, IS_CLOUD, IS_TEST
+from config import SPEC_PATH, CACHE_SPECS_H5, IS_CLOUD
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
 import time
@@ -50,7 +50,9 @@ def write_batch_to_h5(h5_path, batch_data, lock):
                 f.create_dataset(key, data=data, compression="gzip", compression_opts=4)
 
 
-def generate_spectrograms_h5(use_multithreading=True, max_workers=None, batch_size=100):
+def generate_spectrograms_h5(
+    use_multithreading=False, max_workers=None, batch_size=100
+):
     """
     把所有频谱图 parquet 转换成一个 HDF5 文件（分批写入，控制内存）
 
@@ -89,8 +91,6 @@ def generate_spectrograms_h5(use_multithreading=True, max_workers=None, batch_si
 
     # 3. 获取所有parquet文件
     files = [f for f in os.listdir(SPEC_PATH) if f.endswith(".parquet")]
-    if IS_TEST:
-        files = files[:20]
     total = len(files)
 
     if total == 0:

@@ -8,7 +8,7 @@ from sklearn.metrics import log_loss
 from sklearn.preprocessing import LabelEncoder
 import warnings
 import gc
-from config import OUTPUT_PKL_PATH, XGB_MODEL_PATH
+from config import OUTPUT_PKL_PATH, XGB_MODEL_PATH, TEST_MODE
 
 warnings.filterwarnings("ignore")
 
@@ -83,6 +83,21 @@ def prepare_data(df, labels_df):
     # 删除不再需要的 merged_df，释放内存
     del merged_df
     gc.collect()
+
+    # ========== 切片逻辑 ==========
+    SAMPLE_SIZE = 1000  # 测试用的样本数量
+
+    if TEST_MODE:
+        # 随机抽样，保持分组结构
+        np.random.seed(42)
+        # 生成数组索引取子集
+        indices = np.random.choice(len(X), min(SAMPLE_SIZE, len(X)), replace=False)
+        X = X[indices]
+        y_encoded = y_encoded[indices]
+        if groups is not None:
+            groups = groups[indices]
+        print(f"⚠️ 测试模式：仅使用 {len(X)} 个样本进行训练")
+    # =================================
 
     return X, y_encoded, groups, feature_cols, le
 
