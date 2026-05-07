@@ -4,6 +4,7 @@ from src.generate_h5 import generate_spectrograms_h5
 from src.feature_engineering import run_feature_engineering
 from src.train_xgboost import load_features, prepare_data, train_xgboost_with_group_cv
 from config import FEATURE_ENGINEER, MODEL, IS_CLOUD
+import tracemalloc
 
 
 def print_section(title, step_num, total_steps=None):
@@ -17,9 +18,26 @@ def print_section(title, step_num, total_steps=None):
         print(f"  {title}")
         print(f"{'-' * 40}")
 
+def start_memory_monitor():
+    """启动内存监测"""
+    tracemalloc.start()
+
+def print_memory_report():
+    """打印内存报告"""
+    snapshot = tracemalloc.take_snapshot()
+    top_stats = snapshot.statistics('lineno')
+    
+    print("\n" + "=" * 60)
+    print("内存占用 Top 10:")
+    for stat in top_stats[:10]:
+        print(f"  {stat.size / 1024 / 1024:.2f} MB - {stat.traceback.format()[-1].strip()}")
+    print("=" * 60)
+    
+    tracemalloc.stop()
 
 def run_pipeline():
     """主流程"""
+    start_memory_monitor()
     total_steps = 6 if FEATURE_ENGINEER and MODEL == "XGBoost" else 5
 
     # ============================================================
@@ -41,6 +59,7 @@ def run_pipeline():
     # 步骤 2: 数据预处理
     # ============================================================
     print_section("数据预处理", 3, total_steps)
+    # 索引变量
     train_non_overlap = create_non_overlap_data(train_df)
     print(f"非重叠数据形状: {train_non_overlap.shape}")
 
@@ -73,6 +92,7 @@ def run_pipeline():
     print(f"\n{'=' * 60}")
     print("  ✅ 项目全部运行完成！")
     print(f"{'=' * 60}\n")
+    print_memory_report()
 
 
 if __name__ == "__main__":

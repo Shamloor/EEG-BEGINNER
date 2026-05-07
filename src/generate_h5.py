@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import h5py
 import os
-from config import SPEC_PATH, CACHE_SPECS_H5, IS_CLOUD
+from config import SPEC_PATH, CACHE_SPECS_H5, IS_CLOUD, IS_TEST
 from concurrent.futures import ThreadPoolExecutor, as_completed
 import multiprocessing
 import time
@@ -89,6 +89,8 @@ def generate_spectrograms_h5(use_multithreading=True, max_workers=None, batch_si
 
     # 3. 获取所有parquet文件
     files = [f for f in os.listdir(SPEC_PATH) if f.endswith(".parquet")]
+    if IS_TEST:
+        files = files[:20]
     total = len(files)
 
     if total == 0:

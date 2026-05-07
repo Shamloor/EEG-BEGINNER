@@ -74,6 +74,8 @@ def extract_features(train_non_overlap, spectrograms):
     Args:
         train_non_overlap: 频谱图的索引数据, 包括spec_id, min_time, max_time, patient_id
         spectrograms: 频谱图列表（NPY模式下是dict，HDF5模式下是h5py.File对象）
+    Return:
+        
     """
     sample_spec = pd.read_parquet(os.path.join(SPEC_PATH, "1000086677.parquet"))
     SPEC_COLS = sample_spec.columns[1:]
@@ -138,6 +140,8 @@ def run_feature_engineering(train_non_overlap):
     """
     特征工程主入口
     包含：检查已有文件、加载频谱图、提取特征、保存
+    Args:
+        索引变量
     """
     # 1. 检查是否已有特征文件
     if not check_and_handle_existing_pkl():

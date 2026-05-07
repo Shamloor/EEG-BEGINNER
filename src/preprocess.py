@@ -1,5 +1,11 @@
 def create_non_overlap_data(train_df):
-    """按 eeg_id 分组，生成非重叠样本"""
+    """
+    按 eeg_id 分组，生成非重叠样本
+    Args:
+        读取 train.csv 所获得的 DataFrame 变量
+    Return:
+        索引变量
+    """
     grouped = train_df.groupby("eeg_id")
 
     agg_dict = {"spectrogram_id": "first", "spectrogram_label_offset_seconds": "min"}
