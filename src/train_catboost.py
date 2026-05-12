@@ -1,36 +1,35 @@
 import numpy as np
-import xgboost as xgb
+import pandas as pd
+from catboost import CatBoostClassifier
 from sklearn.metrics import classification_report
 from src.base_trainer import group_kfold_cv_base
 
 
-def train_xgboost_with_group_cv(X, y, groups):
-    """使用 XGBoost 训练"""
+def train_catboost_with_group_cv(X, y, groups):
+    """使用 CatBoost 训练"""
     n_classes = len(np.unique(y))
 
-    # XGBoost 参数配置
+    # CatBoost 参数配置
     params = {
-        "objective": "multi:softprob" if n_classes > 2 else "binary:logistic",
-        "eval_metric": "mlogloss" if n_classes > 2 else "logloss",
-        "num_class": n_classes if n_classes > 2 else None,
-        "max_depth": 8,
+        "iterations": 1000,
         "learning_rate": 0.05,
-        "gamma": 0.1,
-        "reg_alpha": 0.1,
-        "reg_lambda": 1,
-        "min_child_weight": 3,
-        "subsample": 0.8,
-        "colsample_bytree": 0.8,
-        "seed": 42,
-        "tree_method": "hist",
-        "device": "cuda",
-        "predictor": "gpu_predictor",
-        "n_jobs": 1,
+        "depth": 8,
+        "loss_function": "MultiClass" if n_classes > 2 else "Logloss",
+        "eval_metric": "MultiClass" if n_classes > 2 else "Logloss",
+        # 删除 custom_metric 这一行
+        "random_seed": 42,
+        "verbose": 100,
+        "early_stopping_rounds": 50,
+        "task_type": "GPU",
+        "devices": "0",
+        "l2_leaf_reg": 3,
+        "border_count": 128,
+        "auto_class_weights": "Balanced",
     }
 
     # 交叉验证
     cv_scores, all_oof_predictions, all_true_labels = group_kfold_cv_base(
-        X, y, groups, xgb.XGBClassifier, params, n_splits=5
+        X, y, groups, CatBoostClassifier, params, n_splits=5
     )
 
     # 输出结果
@@ -51,8 +50,8 @@ def train_xgboost_with_group_cv(X, y, groups):
 
     # 训练最终模型
     print("\n使用全部数据训练最终模型...")
-    final_model = xgb.XGBClassifier(**params)
-    final_model.fit(X, y)
+    final_model = CatBoostClassifier(**params)
+    final_model.fit(X, y, verbose=100)
 
     return final_model, {
         "cv_scores": cv_scores,

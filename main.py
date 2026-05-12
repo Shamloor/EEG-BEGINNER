@@ -2,7 +2,9 @@ from src.data_loader import load_train_csv
 from src.preprocess import create_non_overlap_data
 from src.generate_h5 import generate_spectrograms_h5
 from src.feature_engineering import run_feature_engineering
-from src.train_xgboost import load_features, prepare_data, train_xgboost_with_group_cv
+from src.base_trainer import load_features, prepare_data, save_model
+from src.train_xgboost import train_xgboost_with_group_cv
+from src.train_catboost import train_catboost_with_group_cv
 from config import FEATURE_ENGINEER, MODEL, IS_CLOUD
 import tracemalloc
 import gc
@@ -19,22 +21,27 @@ def print_section(title, step_num, total_steps=None):
         print(f"  {title}")
         print(f"{'-' * 40}")
 
+
 def start_memory_monitor():
     """启动内存监测"""
     tracemalloc.start()
 
+
 def print_memory_report():
     """打印内存报告"""
     snapshot = tracemalloc.take_snapshot()
-    top_stats = snapshot.statistics('lineno')
-    
+    top_stats = snapshot.statistics("lineno")
+
     print("\n" + "=" * 60)
     print("内存占用 Top 10:")
     for stat in top_stats[:10]:
-        print(f"  {stat.size / 1024 / 1024:.2f} MB - {stat.traceback.format()[-1].strip()}")
+        print(
+            f"  {stat.size / 1024 / 1024:.2f} MB - {stat.traceback.format()[-1].strip()}"
+        )
     print("=" * 60)
-    
+
     tracemalloc.stop()
+
 
 def run_pipeline():
     """主流程"""
@@ -77,21 +84,29 @@ def run_pipeline():
         else:
             del final_df
             gc.collect()
-            
+
     del train_non_overlap
     gc.collect()
 
     # ============================================================
     # 步骤 5: 模型训练
     # ============================================================
+
+    print_section("模型训练", 5, total_steps)
+    df = load_features()
+    X, y_encoded, groups, feature_cols, le = prepare_data(df, train_df)
+    del df, train_df, feature_cols
+    gc.collect()
     if MODEL == "XGBoost":
-        print_section("XGBoost 模型训练", 5, total_steps)
-        df = load_features()
-        X, y_encoded, groups, feature_cols, le = prepare_data(df, train_df)
-        del df, train_df
-        gc.collect()
-        model, cv_results = train_xgboost_with_group_cv(
-            X, y_encoded, groups, feature_cols
+        model, cv_results = train_xgboost_with_group_cv(X, y_encoded, groups)
+    elif MODEL == "CatBoost":
+        model, cv_results = train_catboost_with_group_cv(X, y_encoded, groups)
+    elif MODEL == "All":
+        model_xgboost, cv_results_xgboost = train_xgboost_with_group_cv(
+            X, y_encoded, groups
+        )
+        model_catboost, cv_results_catboost = train_catboost_with_group_cv(
+            X, y_encoded, groups
         )
 
     # ============================================================
